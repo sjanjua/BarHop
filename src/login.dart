@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends StatelessWidget
+class LoginScreen extends StatefulWidget
+{
+  @override
+  LoginScreenState createState() => LoginScreenState();
+}
+
+class LoginScreenState extends State< LoginScreen >
 {
 
-  final dbReference = Firestore.instance.collection( "Users" );
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // final dbReference = Firestore.instance.collection( 'Users' );
+
+  TextEditingController emailController    = new TextEditingController();
+  TextEditingController passwordController = new TextEditingController();
 
   @override
   Widget build( BuildContext context )
@@ -29,9 +39,6 @@ class LoginScreen extends StatelessWidget
 
   Widget loginScreen()
   {
-    TextEditingController emailController    = new TextEditingController();
-    TextEditingController passwordController = new TextEditingController();
-
     return Container(
       child: Center(
         child: Column(
@@ -68,13 +75,14 @@ class LoginScreen extends StatelessWidget
               ),
             ),
             MaterialButton(
-              onPressed: () {
+              onPressed: () async {
 
-                dbReference.add({ 
-                  "Email"    : emailController.text,
-                  "Password" : passwordController.text
-                });
+                // dbReference.add({ 
+                //   "Email"    : emailController.text,
+                //   "Password" : passwordController.text
+                // });
 
+                verifyPhoneNumber();
               },
               color: Colors.blueAccent,
               minWidth: 150.0,
@@ -89,6 +97,47 @@ class LoginScreen extends StatelessWidget
           ],
         ),
       ),
+    );
+  }
+
+  void verifyPhoneNumber() async
+  {
+    String message = '';
+    String verificationID;
+
+    final PhoneVerificationCompleted completed = ( FirebaseUser user )
+    {
+      setState( () {
+        message = 'Verification succeeded: $user';
+      });
+    };
+
+    final PhoneVerificationFailed failed = ( AuthException e )
+    {
+      setState( () {
+        message = 'Verification failed...Code: ${e.code} --- Message: ${e.message}';
+        print( message );
+      });
+    };
+
+    final PhoneCodeSent codeSent = ( String verID, [ int forceResendingToken ] ) async
+    {
+      print( 'Check your phone for verification code...' );
+      verificationID = verID;
+    };
+
+    final PhoneCodeAutoRetrievalTimeout codeAutoRetrievalTimeout = ( String verID )
+    {
+      verificationID = verID;
+    };
+
+    await _auth.verifyPhoneNumber(
+      phoneNumber:              '+1' + emailController.text,
+      timeout:                  const Duration( seconds: 5 ),
+      verificationCompleted:    completed,
+      verificationFailed:       failed,
+      codeSent:                 codeSent,
+      codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
     );
   }
 }
