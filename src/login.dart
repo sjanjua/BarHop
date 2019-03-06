@@ -17,6 +17,9 @@ class LoginScreenState extends State< LoginScreen >
   TextEditingController emailController    = new TextEditingController();
   TextEditingController passwordController = new TextEditingController();
 
+  String message = '';
+  String verificationID;
+
   @override
   Widget build( BuildContext context )
   {
@@ -53,13 +56,13 @@ class LoginScreenState extends State< LoginScreen >
               )
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB( 0.0, 100.0, 0.0, 50.0 )
+              padding: EdgeInsets.fromLTRB( 0.0, 30.0, 0.0, 50.0 )
             ),
             Padding(
               padding: EdgeInsets.fromLTRB( 75.0, 0, 75.0, 0 ),
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: "email"
+                  hintText: "phone number"
                 ),
                 controller: emailController,
               ),
@@ -69,7 +72,7 @@ class LoginScreenState extends State< LoginScreen >
               child: TextField(
                 obscureText: true,
                 decoration: InputDecoration(
-                  hintText: "password"
+                  hintText: "verification code"
                 ),
                 controller: passwordController,
               ),
@@ -86,13 +89,15 @@ class LoginScreenState extends State< LoginScreen >
               },
               color: Colors.blueAccent,
               minWidth: 150.0,
-              child: Text( "Login" ),
+              child: Text( "Send Verification Code" ),
             ),
             MaterialButton(
-              onPressed: () {},
+              onPressed: () {
+                signInWithVerificationCode( passwordController.text );
+              },
               color: Colors.blueAccent,
               minWidth: 150.0,
-              child: Text( "Create Account" )
+              child: Text( "Sign In With Verification Code" )
             )
           ],
         ),
@@ -102,9 +107,6 @@ class LoginScreenState extends State< LoginScreen >
 
   void verifyPhoneNumber() async
   {
-    String message = '';
-    String verificationID;
-
     final PhoneVerificationCompleted completed = ( FirebaseUser user )
     {
       setState( () {
@@ -139,6 +141,21 @@ class LoginScreenState extends State< LoginScreen >
       codeSent:                 codeSent,
       codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
     );
+  }
+
+  void signInWithVerificationCode( String smsCode ) async
+  {
+    final AuthCredential credential = PhoneAuthProvider.getCredential(
+      smsCode: passwordController.text,
+      verificationId: verificationID
+    );
+
+    final FirebaseUser user = await _auth.signInWithCredential( credential );
+    final FirebaseUser currentUser = await _auth.currentUser();
+    assert( user.uid == currentUser.uid );
+
+    passwordController.text = '';
+    print( 'sign in succeeded: $user' );
   }
 }
 
