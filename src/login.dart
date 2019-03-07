@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'homepage.dart';
 
 class LoginScreen extends StatefulWidget
 {
@@ -28,9 +29,11 @@ class LoginScreenState extends State< LoginScreen >
       theme: ThemeData( 
         brightness: Brightness.dark
       ),
-      home: Scaffold(
-        appBar: appBar(),
-        body: loginScreen(),
+      home: Builder(
+        builder: ( context ) => Scaffold(
+          appBar: appBar(),
+          body:   loginScreen( context ),
+        ),
       )
     );
   }
@@ -40,7 +43,7 @@ class LoginScreenState extends State< LoginScreen >
     return AppBar();
   }
 
-  Widget loginScreen()
+  Widget loginScreen( BuildContext context )
   {
     return Container(
       child: Center(
@@ -88,15 +91,18 @@ class LoginScreenState extends State< LoginScreen >
                 verifyPhoneNumber();
               },
               color: Colors.blueAccent,
-              minWidth: 150.0,
+              minWidth: 250.0,
               child: Text( "Send Verification Code" ),
             ),
             MaterialButton(
               onPressed: () {
-                signInWithVerificationCode( passwordController.text );
+                signInWithVerificationCode( passwordController.text )
+                .then( ( user ) {
+                  Navigator.push( context, MaterialPageRoute( builder: ( context ) => HomePage() ) );
+                });
               },
               color: Colors.blueAccent,
-              minWidth: 150.0,
+              minWidth: 250.0,
               child: Text( "Sign In With Verification Code" )
             )
           ],
@@ -143,19 +149,22 @@ class LoginScreenState extends State< LoginScreen >
     );
   }
 
-  void signInWithVerificationCode( String smsCode ) async
+  Future< FirebaseUser > signInWithVerificationCode( String smsCode ) async
   {
     final AuthCredential credential = PhoneAuthProvider.getCredential(
       smsCode: passwordController.text,
       verificationId: verificationID
     );
 
-    final FirebaseUser user = await _auth.signInWithCredential( credential );
-    final FirebaseUser currentUser = await _auth.currentUser();
-    assert( user.uid == currentUser.uid );
+      final FirebaseUser user        = await _auth.signInWithCredential( credential );
+      final FirebaseUser currentUser = await _auth.currentUser();
 
-    passwordController.text = '';
-    print( 'sign in succeeded: $user' );
+      assert( user.uid == currentUser.uid );
+
+      passwordController.text = '';
+      print( 'sign in succeeded: $user' );
+
+      return user;
   }
 }
 
