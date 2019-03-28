@@ -20,10 +20,22 @@ class LoginScreenState extends State< LoginScreen >
 
   String message = '';
   String verificationID;
+  int    forceResendToken;
 
   @override
   Widget build( BuildContext context )
   {
+    String uid = "NONE";
+
+    _auth.currentUser().then( ( user ) {
+      if ( user != null )
+      {
+        uid = user.uid;
+      }
+    });
+
+    print( "User ID: " + uid );
+
     return MaterialApp(
       title: "BarHop",
       theme: ThemeData( 
@@ -45,6 +57,9 @@ class LoginScreenState extends State< LoginScreen >
 
   Widget loginScreen( BuildContext context )
   {
+    emailController.text = '6095054407';
+    passwordController.text = '999999';
+
     return Container(
       child: Center(
         child: Column(
@@ -83,11 +98,6 @@ class LoginScreenState extends State< LoginScreen >
             MaterialButton(
               onPressed: () async {
 
-                // dbReference.add({ 
-                //   "Email"    : emailController.text,
-                //   "Password" : passwordController.text
-                // });
-
                 verifyPhoneNumber();
               },
               color: Colors.blueAccent,
@@ -95,10 +105,10 @@ class LoginScreenState extends State< LoginScreen >
               child: Text( "Send Verification Code" ),
             ),
             MaterialButton(
-              onPressed: () {
+              onPressed: () async {
                 signInWithVerificationCode( passwordController.text )
                 .then( ( user ) {
-                  Navigator.push( context, MaterialPageRoute( builder: ( context ) => HomePage() ) );
+                  Navigator.push( context, MaterialPageRoute( builder: ( context ) => HomePage( _auth ) ) );
                 });
               },
               color: Colors.blueAccent,
@@ -131,7 +141,9 @@ class LoginScreenState extends State< LoginScreen >
     final PhoneCodeSent codeSent = ( String verID, [ int forceResendingToken ] ) async
     {
       print( 'Check your phone for verification code...' );
-      verificationID = verID;
+      
+      verificationID   = verID;
+      forceResendToken = forceResendingToken;
     };
 
     final PhoneCodeAutoRetrievalTimeout codeAutoRetrievalTimeout = ( String verID )
@@ -141,11 +153,12 @@ class LoginScreenState extends State< LoginScreen >
 
     await _auth.verifyPhoneNumber(
       phoneNumber:              '+1' + emailController.text,
-      timeout:                  const Duration( seconds: 5 ),
+      timeout:                  const Duration( seconds: 0 ),
       verificationCompleted:    completed,
       verificationFailed:       failed,
       codeSent:                 codeSent,
       codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+      forceResendingToken:      forceResendToken
     );
   }
 
@@ -155,7 +168,7 @@ class LoginScreenState extends State< LoginScreen >
       smsCode: passwordController.text,
       verificationId: verificationID
     );
-
+      
       final FirebaseUser user        = await _auth.signInWithCredential( credential );
       final FirebaseUser currentUser = await _auth.currentUser();
 
