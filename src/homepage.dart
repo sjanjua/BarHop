@@ -59,15 +59,18 @@ class HomePageState extends State<HomePage> {
     });
 
     getNearbyPlaces();
+
+    refreshMap( center );
   }
 
   GoogleMap buildMap()
   {
     map = GoogleMap(
       onMapCreated: onMapCreated,
+      myLocationEnabled: true,
       initialCameraPosition: CameraPosition(
       target: center == null ? LatLng( 40.058323, -74.4057 ) : center,
-      zoom: 11.0),
+      zoom: 25.0),
       markers: Set< Marker >.of( markers.values )
     );
 
@@ -99,7 +102,7 @@ class HomePageState extends State<HomePage> {
     setState( () {
       mapController.animateCamera( CameraUpdate.newCameraPosition( CameraPosition( 
       target: location == null ? LatLng( 0.0, 0.0 ) : location,
-      zoom: 11.0
+      zoom: 16.0
     )));
     });
   }
@@ -162,21 +165,7 @@ class HomePageState extends State<HomePage> {
 
                 getNearbyPlaces();
 
-                if ( loadDetails == false )
-                {
-                  loadDetails = true;
-                }
-
-                else
-                {
-                  // getCurrentLocation().then( ( latLng ) {
-                  //   center = LatLng( latLng.latitude, latLng.longitude );
-                  //   refreshMap( center );
-                  //   loadDetails = !loadDetails;
-                  // });
-
-                  loadDetails = false;
-                }
+                loadDetails = !loadDetails;
               });
             }
           )
@@ -221,7 +210,17 @@ class DetailPanelState extends State< DetailPanel >
         String id    = markerIDs[ index ].value.toString();
         String title = markersList[ index ].infoWindow.title;
 
-        return Text( 'ID: $id --- $title' ); 
+        return Card(
+          child: ListTile(
+            contentPadding: EdgeInsets.all( 30.0 ),
+            title: Text( 'Location: $title' ),
+            subtitle: Text( 'ID: $id' ),
+          ),
+          elevation: 5.0,
+          margin: EdgeInsets.all( 10.0 ),
+        );
+
+        // return Text( 'ID: $id --- $title' ); 
       }
     );
   }
