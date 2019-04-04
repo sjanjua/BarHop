@@ -6,6 +6,7 @@ import 'package:google_maps_webservice/places.dart' as Places;
 import 'package:location/location.dart' as Location;
 import 'package:flutter/services.dart';
 import 'dart:io';
+import 'profile.dart';
 
 class HomePage extends StatefulWidget {
   FirebaseAuth _auth;
@@ -24,31 +25,30 @@ class HomePageState extends State<HomePage> {
   }
 
   FirebaseAuth _auth;
-  GoogleMap           map;
+  GoogleMap map;
   GoogleMapController mapController;
 
   LatLng center;
 
   bool loadDetails = false;
 
-  Places.GoogleMapsPlaces places = Places.GoogleMapsPlaces( apiKey: 'AIzaSyCspDLMbkALY4Hj6Ba-qOb3cJMqS8WBs00' );
-  List< Places.PlacesSearchResult > placesList = [];
+  int searchRadius = 2500;
 
-  Map< MarkerId, Marker > markers = < MarkerId, Marker >{};
+  Places.GoogleMapsPlaces places = Places.GoogleMapsPlaces(
+      apiKey: 'AIzaSyCspDLMbkALY4Hj6Ba-qOb3cJMqS8WBs00');
+  List<Places.PlacesSearchResult> placesList = [];
+
+  Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
 
   @override
   Widget build(BuildContext context) {
-
-    return MaterialApp(
-        theme: ThemeData(brightness: Brightness.dark),
-        home: Scaffold(body: buildBody()));
-  }
-
-  @protected
-  @mustCallSuper
-  void dispose() {
-    _auth.signOut();
-    super.dispose();
+    return MaterialApp(  
+      theme: ThemeData(brightness: Brightness.dark),
+      home: Scaffold(
+        appBar: AppBar( centerTitle: true, title: Text( "Nearby Bars" ) ),
+        body: buildBody()
+      )
+    );
   }
 
   void onMapCreated(GoogleMapController controller) async {
@@ -58,21 +58,19 @@ class HomePageState extends State<HomePage> {
       center = latLng;
     });
 
-    getNearbyPlaces();
+    getNearbyPlaces( searchRadius );
 
-    refreshMap( center );
+    refreshMap(center);
   }
 
-  GoogleMap buildMap()
-  {
+  GoogleMap buildMap() {
     map = GoogleMap(
-      onMapCreated: onMapCreated,
-      myLocationEnabled: true,
-      initialCameraPosition: CameraPosition(
-      target: center == null ? LatLng( 40.058323, -74.4057 ) : center,
-      zoom: 25.0),
-      markers: Set< Marker >.of( markers.values )
-    );
+        onMapCreated: onMapCreated,
+        myLocationEnabled: true,
+        initialCameraPosition: CameraPosition(
+            target: center == null ? LatLng(40.058323, -74.4057) : center,
+            zoom: 16.0),
+        markers: Set<Marker>.of(markers.values));
 
     return map;
   }
@@ -84,7 +82,8 @@ class HomePageState extends State<HomePage> {
     try {
       currentLocation = await locationService.getLocation();
 
-      LatLng center = LatLng(currentLocation.latitude, currentLocation.longitude);
+      LatLng center =
+          LatLng(currentLocation.latitude, currentLocation.longitude);
 
       return center;
     } on PlatformException catch (e) {
@@ -97,47 +96,45 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  void refreshMap( LatLng location ) async
-  {
-    setState( () {
-      mapController.animateCamera( CameraUpdate.newCameraPosition( CameraPosition( 
-      target: location == null ? LatLng( 0.0, 0.0 ) : location,
-      zoom: 16.0
-    )));
+  void refreshMap( LatLng location ) async {
+    setState(() {
+      mapController.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+          target: location == null ? LatLng(0.0, 0.0) : location, zoom: 16.0)));
     });
   }
 
-  void getNearbyPlaces() async 
-  {
-    Places.Location location = Places.Location( center.latitude, center.longitude );
+  void getNearbyPlaces( int radius ) async {
+    Places.Location location =
+        Places.Location(center.latitude, center.longitude);
 
-    final result = await places.searchNearbyWithRadius( location, 2500 );
-
+    final result = await places.searchNearbyWithRadius( location, radius, type: "bar" );
+    
     placesList = result.results;
 
     int idVal = 0;
+    
+    markers.clear();
 
-      result.results.forEach( ( f ) {
-      Marker marker = Marker( 
-        markerId: MarkerId( '${idVal}' ),
-        position: LatLng( f.geometry.location.lat, f.geometry.location.lng ),
-        infoWindow: InfoWindow( title: "${f.name}, ${f.types.first}"));
+    placesList.forEach((f) {
 
-        MarkerId id = MarkerId( '${idVal++}');
+      Marker marker = Marker(
+          markerId: MarkerId('$idVal'),
+          position: LatLng(f.geometry.location.lat, f.geometry.location.lng),
+          infoWindow: InfoWindow(title: "${f.name}, ${f.types.first}")); 
+      MarkerId id = MarkerId('${idVal++}');
 
-        setState( () {
-          markers[ id ] = marker;
-        });
-
-        markers.forEach( ( id, m ) {
-          print( 'Key: $id' + 'Marker: ${m.infoWindow.title}');
-        });
+      setState(() {
+        markers[id] = marker;
       });
+
+      markers.forEach((id, m) {
+        print('Key: $id' + 'Marker: ${m.infoWindow.title}');
+      });
+    });
   }
 
-  Widget loadDetailPanel()
-  {
-    getNearbyPlaces();
+  Widget loadDetailPanel() {
+    getNearbyPlaces( searchRadius );
 
     DetailPanel detailPanel = DetailPanel( markers );
 
@@ -148,80 +145,109 @@ class HomePageState extends State<HomePage> {
     return Stack(
       children: <Widget>[
         Container(
-          child: Flex( 
-            direction: Axis.vertical,
-            children: <Widget>[
-              loadDetails ? Expanded( child: loadDetailPanel() ) : Expanded( child: buildMap() )
-            ],
-          )
+            child: Flex(
+          direction: Axis.vertical,
+          children: <Widget>[
+            loadDetails
+                ? Expanded(child: loadDetailPanel())
+                : Expanded(child: buildMap())
+          ],
+        )),
+        Align(
+            alignment: Alignment.bottomRight,
+            child: FlatButton(
+                color: Colors.black,
+                child: Text( loadDetails ? "Map" : "List" ),
+                onPressed: () {
+                  setState(() {
+                    getNearbyPlaces( searchRadius );
+
+                    loadDetails = !loadDetails;
+                  });
+                })),
+        Align(
+          alignment: Alignment.topCenter,
+          child: searchRadiusField(),
         ),
         Align(
-          alignment: Alignment.bottomRight,
+          alignment: Alignment.bottomLeft,
           child: FlatButton(
             color: Colors.black,
-            child: Text( "List" ),
+            child: Text( "Profile" ),
             onPressed: () {
-              setState( () {
-
-                getNearbyPlaces();
-
-                loadDetails = !loadDetails;
-              });
+              Navigator.push( context, MaterialPageRoute( builder: ( context ) => Profile() ) );
             }
           )
         )
       ],
     );
   }
+
+  Widget searchRadiusField()
+  {
+    TextEditingController controller = TextEditingController();
+
+    return Padding(
+      padding: EdgeInsets.only( top: 0.0 ),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Color.fromARGB( 100, 0, 20, 50 )
+        ),
+        textAlign: TextAlign.center,
+        onEditingComplete: () {
+          setState( () {
+            print( "Editing Complete" );
+            searchRadius = int.parse( controller.text );
+            getNearbyPlaces( searchRadius );
+            buildMap();
+          });
+        },
+      )
+    );
+  }
 }
 
-class DetailPanel extends StatefulWidget
-{
-  Map< MarkerId, Marker > markers = < MarkerId, Marker >{};
+class DetailPanel extends StatefulWidget {
+  Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
 
-  DetailPanel( Map< MarkerId, Marker > map )
-  {
+  DetailPanel(Map<MarkerId, Marker> map) {
     markers = map;
   }
 
   @override
-  DetailPanelState createState() => DetailPanelState( markers );
+  DetailPanelState createState() => DetailPanelState(markers);
 }
 
-class DetailPanelState extends State< DetailPanel >
-{
-  Map< MarkerId, Marker > markers = < MarkerId, Marker >{};
+class DetailPanelState extends State<DetailPanel> {
+  Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
 
-  DetailPanelState( Map< MarkerId, Marker > m )
-  {
+  DetailPanelState(Map<MarkerId, Marker> m) {
     markers = m;
   }
 
   @override
-  Widget build( BuildContext context )
-  {
-    List< MarkerId > markerIDs   = markers.keys.toList();
-    List< Marker >   markersList = markers.values.toList();
+  Widget build(BuildContext context) {
+    List<MarkerId> markerIDs = markers.keys.toList();
+    List<Marker> markersList = markers.values.toList();
 
-    return ListView.builder( 
-      itemCount: markers.length,
-      itemBuilder: ( context, index ) {
+    return ListView.builder(
+        itemCount: markers.length,
+        itemBuilder: (context, index) {
+          String id = markerIDs[index].value.toString();
+          String title = markersList[index].infoWindow.title;
 
-        String id    = markerIDs[ index ].value.toString();
-        String title = markersList[ index ].infoWindow.title;
-
-        return Card(
-          child: ListTile(
-            contentPadding: EdgeInsets.all( 30.0 ),
-            title: Text( 'Location: $title' ),
-            subtitle: Text( 'ID: $id' ),
-          ),
-          elevation: 5.0,
-          margin: EdgeInsets.all( 10.0 ),
-        );
-
-        // return Text( 'ID: $id --- $title' ); 
-      }
-    );
+          return Card(
+            child: ListTile(
+              contentPadding: EdgeInsets.all( 30.0 ),
+              title: Text('Location: $title'),
+              subtitle: Text('ID: $id'),
+            ),
+            elevation: 5.0,
+            margin: EdgeInsets.all(10.0),
+          );
+        });
   }
 }
