@@ -39,12 +39,12 @@ class LoginScreenState extends State< LoginScreen >
     return MaterialApp(
       title: "BarHop",
       theme: ThemeData( 
-        brightness: Brightness.dark
+        brightness: Brightness.light
       ),
       home: Builder(
         builder: ( context ) => Scaffold(
           appBar: appBar(),
-          body:   loginScreen( context ),
+          body: ageVerification( context ),
         ),
       )
     );
@@ -55,12 +55,45 @@ class LoginScreenState extends State< LoginScreen >
     return AppBar();
   }
 
+  Widget ageVerification(BuildContext context)
+  {
+    return Container(
+      child: Center(
+        child: Column(
+          children: <Widget>[
+            Padding(
+              padding: EdgeInsets.fromLTRB(75.0, 50.0, 50.0, 50.0)
+            ),
+            Text(
+              "By clicking this button, you agree that you are within the legal drinking age of your country and that you are responsible for any action while under the influence",
+              style: TextStyle(fontSize: 30.0
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB( 75.0, 25.0, 75.0, 125.0 )
+            ),
+            MaterialButton(
+              onPressed:(){
+                Navigator.push( context, MaterialPageRoute( 
+                  builder: ( context ) => loginScreen( context) ) );
+              },
+              color: Colors.blueAccent,
+              minWidth: 250.0,
+              child: Text( "I agree" ),
+            )
+          ],
+        ),
+        ),
+    );
+  }
+  
   Widget loginScreen( BuildContext context )
   {
     emailController.text = '6095054407';
     passwordController.text = '999999';
 
-    return Container(
+    return new Material(
       child: Center(
         child: Column(
           children: <Widget>[
@@ -180,4 +213,3 @@ class LoginScreenState extends State< LoginScreen >
       return user;
   }
 }
-
