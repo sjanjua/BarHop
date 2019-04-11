@@ -5,7 +5,7 @@ import 'package:flutter_google_places/flutter_google_places.dart';
 import 'package:google_maps_webservice/places.dart' as Places;
 import 'package:location/location.dart' as Location;
 import 'package:flutter/services.dart';
-import 'dart:io';
+import 'login.dart';
 import 'profile.dart';
 
 class HomePage extends StatefulWidget {
@@ -41,7 +41,7 @@ class HomePageState extends State<HomePage> {
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
 
   @override
-  Widget build(BuildContext context) {
+  Widget build( BuildContext context ) {
     return MaterialApp(  
       theme: ThemeData(brightness: Brightness.dark),
       home: Scaffold(
@@ -68,7 +68,7 @@ class HomePageState extends State<HomePage> {
         onMapCreated: onMapCreated,
         myLocationEnabled: true,
         initialCameraPosition: CameraPosition(
-            target: center == null ? LatLng(40.058323, -74.4057) : center,
+            target: center == null ? LatLng( 40.058323, -74.4057 ) : center,
             zoom: 16.0),
         markers: Set<Marker>.of(markers.values));
 
@@ -177,6 +177,18 @@ class HomePageState extends State<HomePage> {
             onPressed: () {
               Navigator.push( context, MaterialPageRoute( builder: ( context ) => Profile() ) );
             }
+          ),
+        ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: FlatButton(
+            color: Colors.black,
+            child: Text( "Logout" ),
+            onPressed: () {
+              _auth.signOut();
+              Navigator.pop( context ); 
+              Navigator.push( context, MaterialPageRoute( builder: ( context ) => LoginScreen() ) );
+            }
           )
         )
       ],
@@ -188,7 +200,7 @@ class HomePageState extends State<HomePage> {
     TextEditingController controller = TextEditingController();
 
     return Padding(
-      padding: EdgeInsets.only( top: 0.0 ),
+      padding: EdgeInsets.fromLTRB( 75.0, 0.0, 75.0, 0.0 ),
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.number,

@@ -34,17 +34,17 @@ class ProfileState extends State< Profile >
                 Padding( padding: EdgeInsets. all( 10.0 ) ),
                 Expanded(
                   child: ListView.builder( 
-                  itemCount: 20,
-                  itemBuilder: ( context, index ) {
-                    return Card(
-                      child: ListTile(
-                      leading: Icon( Icons.star ),
-                      title: Text( "Friend Activity" ),
-                      subtitle: Text( "$index mins ago" ),
-                    )
-                    );
-                  },
-                )
+                    itemCount: 20,
+                    itemBuilder: ( context, index ) {
+                      return Card(
+                        child: ListTile(
+                        leading: Icon( Icons.star ),
+                        title: Text( "Friend Activity" ),
+                        subtitle: Text( "$index mins ago" ),
+                        )
+                      );
+                    },
+                  )
                 )
               ],
             )
