@@ -54,12 +54,12 @@ class LoginScreenState extends State< LoginScreen >
 
     if ( user != null )
     {
-      print( "User ID: ${ user.uid }" );
+      //print( "User ID: ${ user.uid }" );
       return user;
     }
     else
     {
-      print( "User ID: NONE, PLEASE SIGN IN" );
+      //print( "User ID: NONE, PLEASE SIGN IN" );
       return null;
     }
   }
@@ -76,7 +76,7 @@ class LoginScreenState extends State< LoginScreen >
         child: Column(
           children: <Widget>[
             Padding(
-              padding: EdgeInsets.fromLTRB(50.0, 0.0, 50.0, 120.0)
+              padding: EdgeInsets.fromLTRB( 50.0, 0.0, 50.0, 120.0 )
             ),
             Padding(
               padding: EdgeInsets.fromLTRB( 25.0, 5.0, 25.0, 5.0 ),
@@ -94,7 +94,8 @@ class LoginScreenState extends State< LoginScreen >
             MaterialButton(
               onPressed:(){
                 Navigator.push( context, MaterialPageRoute( 
-                  builder: ( context ) => loginScreen( context) ) );
+                  builder: ( context ) => loginScreen( context) ) 
+                );
               },
               color: Colors.orange[300],
               minWidth: 250.0,
@@ -158,7 +159,7 @@ class LoginScreenState extends State< LoginScreen >
           onPressed: () async {
             verifyPhoneNumber();
           },
-          color: Colors.orange[300],
+          color: Colors.orange[ 300 ],
           minWidth: 250.0,
           child: Text( "Send Verification Code", style: TextStyle( color: Colors.black ) ),
         ),
@@ -173,14 +174,6 @@ class LoginScreenState extends State< LoginScreen >
           minWidth: 250.0,
           child: Text( "Sign In With Verification Code", style: TextStyle( color: Colors.black ) )
         ),
-        MaterialButton(
-          onPressed: () async {
-            _auth.signOut();
-          },
-          color: Colors.orange[300],
-          minWidth: 250.0,
-          child: Text( "Logout", style: TextStyle( color: Colors.black ) )
-        )
       ],
     ),
   );
@@ -190,7 +183,6 @@ class LoginScreenState extends State< LoginScreen >
     final PhoneVerificationCompleted completed = ( FirebaseUser user )
     {
       setState( () {
-        
         message = 'Verification succeeded: $user';
       });
     };
