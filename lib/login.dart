@@ -12,7 +12,7 @@ class LoginScreen extends StatefulWidget
 class LoginScreenState extends State< LoginScreen >
 {
   final FirebaseAuth _auth = FirebaseAuth.instance; 
-  // final dbReference = Firestore.instance.collection( 'Users' );
+  final dbReference = Firestore.instance.collection( 'Users' );
 
   TextEditingController emailController    = new TextEditingController();
   TextEditingController passwordController = new TextEditingController();
@@ -25,7 +25,7 @@ class LoginScreenState extends State< LoginScreen >
 
   @override
   Widget build( BuildContext context )
-  {
+  { 
     getUser().then( ( user ) {
       if ( user != null )
       {
@@ -129,7 +129,7 @@ class LoginScreenState extends State< LoginScreen >
           alignment: Alignment.center,
           decoration: BoxDecoration(
             image:DecorationImage(
-              image:AssetImage('assets/barhoplogo.png'),
+              image:AssetImage('assets/finallogo.png'),
             )
           ),
         ),
@@ -233,6 +233,23 @@ class LoginScreenState extends State< LoginScreen >
 
       passwordController.text = '';
       print( 'sign in succeeded: $user' );
+
+      await dbReference.where( "UID", isEqualTo: user.uid ).getDocuments().then( ( snapshot ) {
+        if ( snapshot.documents.isEmpty )
+        {
+          dbReference.add( <String, dynamic> { 
+            "Name"    : "User Name",
+            "Phone"   : emailController.text,
+            "UID"     : user.uid,
+            "CheckIn" : "N/A"
+          });
+          print( "empty" );
+        }
+        else 
+        {
+          print( "UID already exists" );
+        }
+      });
 
       return user;
   }

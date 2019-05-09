@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,16 +18,16 @@ class HomePage extends StatefulWidget {
   }
 
   @override
-  HomePageState createState() => HomePageState(_auth);
+  HomePageState createState() => HomePageState( _auth );
 }
 
-class HomePageState extends State<HomePage> {
-  HomePageState(FirebaseAuth auth) {
+class HomePageState extends State< HomePage > {
+  HomePageState( FirebaseAuth auth ) {
     _auth = auth;
   }
 
-  FirebaseAuth _auth;
-  GoogleMap map;
+  FirebaseAuth        _auth;
+  GoogleMap           map;
   GoogleMapController mapController;
 
   LatLng center;
@@ -36,14 +37,32 @@ class HomePageState extends State<HomePage> {
   int searchRadius = 2500;
 
   Places.GoogleMapsPlaces places = Places.GoogleMapsPlaces(
-      apiKey: 'AIzaSyCspDLMbkALY4Hj6Ba-qOb3cJMqS8WBs00');
+      apiKey: 'AIzaSyCspDLMbkALY4Hj6Ba-qOb3cJMqS8WBs00'
+  );
+
   List<Places.PlacesSearchResult> placesList = [];
-  List< List< Places.Photo > > photos = [];
-  List< String > distances = [];
-  List< double > ratings = [];
-  List< bool > isOpen = [];
+  List< List< Places.Photo > >    photos     = [];
+  List< String >                  distances  = [];
+  List< double >                  ratings    = [];
+  List< bool >                    isOpen     = [];
 
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
+
+  @override
+  void initState()
+  {
+    super.initState();
+
+    // initialize map
+    // get current location
+    //map = buildMap();
+    // get nearby places
+        // store nearby places
+    //getNearbyPlaces( searchRadius );
+
+    // refresh map
+    //refreshMap( center );
+  }
 
   @override
   Widget build( BuildContext context ) {
@@ -126,15 +145,32 @@ class HomePageState extends State<HomePage> {
 
     placesList.forEach((f) {
 
-      Marker marker = Marker(
-          markerId: MarkerId('$idVal'),
-          position: LatLng(f.geometry.location.lat, f.geometry.location.lng),
-          infoWindow: InfoWindow(title: "${f.name}")); 
+      String locationName = f.name;
+      
+      Marker marker = Marker( 
+        markerId: MarkerId('$idVal'),
+        position: LatLng(f.geometry.location.lat, f.geometry.location.lng),
+        infoWindow: InfoWindow(
+          title: "${f.name}",
+          onTap: () {
+            String mapsURL = "https://www.google.com/maps/dir/?api=1";
+
+            mapsURL += '&destination=$locationName';
+
+            canLaunch( mapsURL ).then( ( result ) {
+              if ( result == true )
+              {
+                launch( mapsURL );
+              }
+            });
+          }
+        )
+      ); 
       MarkerId id = MarkerId('${idVal++}');
 
-      setState(() {
+      // setState( () {
         markers[id] = marker;
-        photos.add( f.photos ); 
+        //photos.add( f.photos ); 
         distances.add( f.vicinity );
 
         if ( f.openingHours != null )
@@ -155,20 +191,24 @@ class HomePageState extends State<HomePage> {
           ratings.add( f.rating.toDouble() );
         }
         
-      });
+      // });
 
       // markers.forEach((id, m) {
       //   print('Key: $id' + 'Marker: ${m.infoWindow.title}');
       // });
     });
 
-    print( photos.toString() );
+    setState( () {
+      print( "getNearbyPlaces() -> SetState()" );
+    });
+
+    //print( photos.toString() );
   }
 
-  Widget loadDetailPanel() {
-    getNearbyPlaces( searchRadius );
+  Widget loadDetailPanel( FirebaseAuth auth ) {
+    //getNearbyPlaces( searchRadius );
 
-    DetailPanel detailPanel = DetailPanel( markers, photos, distances, ratings, isOpen );
+    DetailPanel detailPanel = DetailPanel( markers, photos, distances, ratings, isOpen, auth );
 
     return detailPanel;
   }
@@ -180,7 +220,7 @@ class HomePageState extends State<HomePage> {
             child: Flex(
           direction: Axis.vertical,
           children: <Widget>[
-                Expanded(child: buildMap())
+                Expanded( child: buildMap() )
           ],
         )),
         Align(
@@ -197,7 +237,7 @@ class HomePageState extends State<HomePage> {
                   backgroundColor: Colors.redAccent,
                   child: Text( "Profile" ),
                   onPressed: () {
-                    Navigator.push( context, MaterialPageRoute( builder: ( context ) => Profile() ) );
+                    Navigator.push( context, MaterialPageRoute( builder: ( context ) => Profile( _auth ) ) );
                   },
                 ),
                 Padding( padding: EdgeInsets.all( 5.0 ) ),
@@ -208,7 +248,7 @@ class HomePageState extends State<HomePage> {
                   onPressed: () {
                     setState( () {
 
-                      Navigator.push( context, MaterialPageRoute( builder: ( context ) => loadDetailPanel() ) );
+                      Navigator.push( context, MaterialPageRoute( builder: ( context ) => loadDetailPanel( _auth ) ) );
 
                       loadDetails = !loadDetails;
                     });
@@ -223,18 +263,6 @@ class HomePageState extends State<HomePage> {
           alignment: Alignment.topCenter,
           child: searchRadiusField(),
         ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: FlatButton(
-            color: Colors.black,
-            child: Text( "Logout" ),
-            onPressed: () {
-              _auth.signOut();
-              Navigator.pop( context ); 
-              Navigator.push( context, MaterialPageRoute( builder: ( context ) => LoginScreen() ) );
-            }
-          )
-        )
       ],
     );
   }
@@ -274,21 +302,25 @@ class DetailPanel extends StatefulWidget {
   List< double > ratings = [];
   List< bool > isOpen = [];
 
+  FirebaseAuth _auth;
+
   DetailPanel( 
     Map<MarkerId, Marker> map, 
     List< List< Places.Photo > > p,
     List< String > d,
     List< double > r,
-    List< bool > o ) {
+    List< bool > o,
+    FirebaseAuth auth ) {
     markers = map;
     photos = p;
     distances = d;
     ratings = r;
     isOpen = o;
+    _auth = auth;
   }
 
   @override
-  DetailPanelState createState() => DetailPanelState(markers, photos, distances, ratings, isOpen );
+  DetailPanelState createState() => DetailPanelState(markers, photos, distances, ratings, isOpen, _auth );
 }
 
 class DetailPanelState extends State<DetailPanel> {
@@ -298,17 +330,22 @@ class DetailPanelState extends State<DetailPanel> {
   List< double > ratings = [];
   List< bool > isOpen = [];
 
+  FirebaseAuth _auth;
+  CollectionReference dbReference = Firestore.instance.collection( 'Users' );
+
   DetailPanelState(
     Map<MarkerId, Marker> m, 
     List< List< Places.Photo > > p,
     List< String > d,
     List< double > r,
-    List< bool > o ) {
+    List< bool > o,
+    FirebaseAuth auth ) {
     markers = m;
     photos = p;
     distances = d;
     ratings = r;
     isOpen = o;
+    _auth = auth;
   }
 
   @override
@@ -325,28 +362,11 @@ class DetailPanelState extends State<DetailPanel> {
           double rating   = ratings.elementAt( index );
           bool isOpenNow = isOpen.elementAt( index );
 
-          // String photoReference = "";
-          // String imageURL = "";
-
-          // if ( photos.elementAt( index ) != null )
-          // {
-          //   photoReference = photos.elementAt( index ).first.photoReference;
-          //   imageURL = 'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=AIzaSyCspDLMbkALY4Hj6Ba-qOb3cJMqS8WBs00';
-          // }
-
-          // Image image = Image.network(
-          //   imageURL,
-          //   scale: 1.0,
-          //   repeat: ImageRepeat.noRepeat,
-          //   height: 100.0,
-          //   width: 100.0
-          // );
-
           return Card(
             child: Column(
               children: <Widget>[
                 ListTile(
-                  contentPadding: EdgeInsets.all( 30.0 ),
+                  contentPadding: EdgeInsets.all( 20.0 ),
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
@@ -357,7 +377,25 @@ class DetailPanelState extends State<DetailPanel> {
                     children: <Widget>[
                       Text( "Rating: $rating" ),
                       Text( '$distance' ),
-                      Text( isOpenNow ? "Open now" : "Closed now" )
+                      Text( isOpenNow ? "Open now" : "Closed now" ),
+                      Padding(
+                        padding: EdgeInsets.only( top: 15.0),
+                        child: RaisedButton(
+                          color: Colors.orange[ 300 ],
+                          child: Text( "Check In" ),
+                          onPressed: () async {
+                            FirebaseUser user = await _auth.currentUser();
+
+                            QuerySnapshot snapshot = await dbReference.where( "UID", isEqualTo: user.uid ).getDocuments();
+
+                            dbReference.document( snapshot.documents.first.documentID ).updateData(
+                              < String, dynamic >{
+                                "CheckIn" : "$title"
+                              }
+                             );
+                          },
+                        ),
+                      ),
                     ],
                   ),
                   onTap: () {
@@ -373,11 +411,6 @@ class DetailPanelState extends State<DetailPanel> {
                     });
                   },
                 ),
-                // SizedBox(
-                //   width: 100,
-                //   height: 100,
-                //   child: image
-                // ),
               ],
             ),
             elevation: 5.0,
